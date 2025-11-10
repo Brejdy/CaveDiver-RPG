@@ -1,5 +1,8 @@
 ﻿using CaveDiver.Models;
 using CaveDiver.Dialogue;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.IO;
 
 namespace CaveDiver.Engine;
 
@@ -130,58 +133,136 @@ public class GameEngine
         {
             GameUtils.TypeLine($"All enemies have been slain");
 
-            int totalXP = enemies.Select(e => e.ExperienceReward).Sum();
-            int partySize = companions.Count() + 1;
-            player.GainExperience(totalXP / partySize);
-            player.Gold += enemies.Count() * Dice.D4();
-
-            foreach (var companion in companions)
-            {
-                if (!companion.IsAlive)
-                {
-                    GameUtils.Type($"{companion.Name} return to us!");
-                    companion.Health = companion.MaxHealth / 5;
-                }
-
-                companion.GainExperience(totalXP / partySize);
-            }
-
-            var party = new List<Character> { player };
-            party.AddRange(companions);
-
-            foreach (var enemy in enemies)
-            {
-                if (enemy.LootItem != null)
-                {
-                    GameUtils.TypeLine($"You found {enemy.LootItem.Name} ({enemy.LootItem.ToString()}) on {enemy.Name}!");
-                    GameUtils.TypeLine("Who should take this item?");
-
-                    for (int i = 0; i < party.Count; i++)
-                    {
-                        GameUtils.TypeLine($"{i + 1}. {party[i].Name} \n SRT: {party[i].Strength} \n DEF: {party[i].Defense} \n INT: {party[i].Intelligence}");
-                    }
-
-                    int choice = -1;
-
-                    while (choice < 1 || choice > party.Count)
-                    {
-                        GameUtils.TypeLine("Enter the number of character: ");
-                        string? input = Console.ReadLine();
-                        if (!int.TryParse(input, out choice) || choice < 1 || choice > party.Count)
-                        {
-                            GameUtils.TypeLine("Invalid choice, try again!");
-                        }
-                    }
-
-                    var reciever = party[choice - 1];
-                    reciever.AddItem(enemy.LootItem);
-                    GameUtils.TypeLine($"{reciever.Name} recieved {enemy.LootItem.Name}");
-                }
-            }
+            BattleIsWon(player, companions, enemies);
         }
         else
         {
             GameUtils.TypeLine("Battle is over");
         }
+    }
+
+    public void BattleIsWon(Player player, List<Companion> companions, List<Enemy> enemies)
+    {
+        int totalXP = enemies.Select(e => e.ExperienceReward).Sum();
+        int partySize = companions.Count() + 1;
+        player.GainExperience(totalXP / partySize);
+        player.Gold += enemies.Count() * Dice.D4();
+
+        foreach (var companion in companions)
+        {
+            if (!companion.IsAlive)
+            {
+                GameUtils.Type($"{companion.Name} return to us!");
+                companion.Health = companion.MaxHealth / 5;
+            }
+
+            companion.GainExperience(totalXP / partySize);
+        }
+
+        var party = new List<Character> { player };
+        party.AddRange(companions);
+
+        GettingLoot(party, enemies);
+    }
+
+    public void GettingLoot(List<Character> party, List<Enemy> enemies)
+    {
+        foreach (var enemy in enemies)
+        {
+            if (enemy.LootItem == null)
+            {
+                continue;
+            }
+
+            var item = enemy.LootItem;
+            GameUtils.TypeLine($"You found {item.Name} on {enemy.Name}!");
+
+            while (true)
+            {
+                GameUtils.TypeLine("Who should take this item?");
+                for (int i = 0; i < party.Count; i++)
+                {
+                    var ch = party[i];
+                    GameUtils.TypeLine($"{i + 1}. {ch.Name} (STR {ch.Strength}, DEF {ch.Defense}, INT {ch.Intelligence})");
+                }
+                GameUtils.TypeLine($"{party.Count + 1}. Discard the item");
+
+                int choice = AskForNumber("Enter number:", 1, party.Count + 1);
+
+                if (choice == party.Count + 1)
+                {
+                    GameUtils.TypeLine($"{item.Name} was discarded.");
+                    break;
+                }
+
+                var receiver = party[choice - 1];
+
+                if (receiver.Inventory.Count < Character.MaxInventorySize)
+                {
+                    receiver.AddItem(item);
+                    GameUtils.TypeLine($"{receiver.Name} received {item.Name}!");
+                    break;
+                }
+
+                GameUtils.TypeLine($"{receiver.Name} cannot carry more items.");
+                GameUtils.TypeLine($"Would you like to (1) swap, (2) give to someone else, or (3) discard?");
+                string? action = Console.ReadLine()?.Trim();
+
+                if (action == "1" || action.Equals("swap", StringComparison.OrdinalIgnoreCase))
+                {
+                    receiver.RemoveItem(item);
+                    receiver.AddItem(item);
+                    break;
+                }
+                else if (action == "2" || action.Equals("give", StringComparison.OrdinalIgnoreCase))
+                {
+                    var others = party.Where(c => c != receiver).ToList();
+                    GameUtils.TypeLine("Who should receive it instead?");
+                    for (int i = 0; i < others.Count; i++)
+                    {
+                        GameUtils.TypeLine($"{i + 1}. {others[i].Name}");
+                    }
+                    GameUtils.TypeLine($"{others.Count + 1}. Cancel");
+
+                    int giveChoice = AskForNumber("Enter number:", 1, others.Count + 1);
+                    if (giveChoice == others.Count + 1)
+                    {
+                        GameUtils.TypeLine("You decided to keep it as is.");
+                        continue;
+                    }
+
+                    var newReceiver = others[giveChoice - 1];
+                    if (newReceiver.Inventory.Count < Character.MaxInventorySize)
+                    {
+                        newReceiver.AddItem(item);
+                        GameUtils.TypeLine($"{newReceiver.Name} received {item.Name}!");
+                    }
+                    else
+                    {
+                        GameUtils.TypeLine($"{newReceiver.Name} also has full inventory. Item discarded.");
+                    }
+                    break;
+                }
+                else
+                {
+                    GameUtils.TypeLine($"{item.Name} was discarded.");
+                    break;
+                }
+            }
+        }
+    }
+
+    private int AskForNumber(string question, int min, int max)
+    {
+        int choice = -1;
+        while (choice < min || choice > max)
+        {
+            GameUtils.Type($"{question}");
+            if (!int.TryParse(Console.ReadLine(), out choice) || choice < min || choice > max)
+            {
+                GameUtils.TypeLine("Invalid choice, try again.");
+            }
+        }
+        return choice;
     }
 }

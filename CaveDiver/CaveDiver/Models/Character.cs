@@ -55,7 +55,7 @@ public abstract class Character
 
     public bool AddItem(Item item)
     {
-        if (Inventory.Count >= 5)
+        if (Inventory.Count >= MaxInventorySize)
         {
             GameUtils.TypeLine($"{Name} cannot carry anymore items");
             return false;
