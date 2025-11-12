@@ -12,3 +12,4 @@ C:\Users\janjb\source\repos\rpg-chatbot\CaveDiver\CaveDiver\obj\Debug\net9.0\ref
 C:\Users\janjb\source\repos\rpg-chatbot\CaveDiver\CaveDiver\obj\Debug\net9.0\CaveDiver.pdb
 C:\Users\janjb\source\repos\rpg-chatbot\CaveDiver\CaveDiver\obj\Debug\net9.0\CaveDiver.genruntimeconfig.cache
 C:\Users\janjb\source\repos\rpg-chatbot\CaveDiver\CaveDiver\obj\Debug\net9.0\ref\CaveDiver.dll
+C:\Users\janjb\source\repos\rpg-chatbot\CaveDiver\CaveDiver\obj\Debug\net9.0\CaveDiver.sourcelink.json

@@ -1,5 +1,6 @@
 ﻿using CaveDiver.Engine;
 using CaveDiver.Dialogue;
+using CaveDiver.Models.Types;
 
 namespace CaveDiver.Models;
 

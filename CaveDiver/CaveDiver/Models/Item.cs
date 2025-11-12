@@ -4,17 +4,20 @@ public class Item
 {
     public string Name { get; set; }
     public string Type { get; set; }
+    public string Rarity { get; set; }
     public int StrengthBonus { get; set; }
     public int DefenseBonus { get; set; }
     public int IntelligenceBonus { get; set; }
+    public int Price { get; set; }
 
-    public Item(string name, string type, int str = 0, int def = 0, int intl = 0)
+    public Item(string name, string type, int str = 0, int def = 0, int intl = 0, int price = 0)
     {
         Name = name; 
         Type = type; 
         StrengthBonus = str; 
         DefenseBonus = def; 
         IntelligenceBonus = intl;
+        Price = price;
     }
 
     public override string ToString()

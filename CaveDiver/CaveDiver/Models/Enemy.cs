@@ -1,4 +1,6 @@
-﻿namespace CaveDiver.Models;
+﻿using CaveDiver.Models.Types;
+
+namespace CaveDiver.Models;
 
 public class Enemy : Character
 {
@@ -18,7 +20,7 @@ public class Enemy : Character
                 MaxHealth = 20;
                 Strength = 8;
                 Defense = 6;
-                ExperienceReward = 1000;
+                ExperienceReward = 100;
                 LootItem = new Item("Rusty Dagger", "Weapon", str: 2);
                 break;
 
@@ -27,7 +29,7 @@ public class Enemy : Character
                 MaxHealth = 25;
                 Strength = 10;
                 Defense = 8;
-                ExperienceReward = 15;
+                ExperienceReward = 150;
                 LootItem = new Item("Magic crystal", "Weapon", intl: 2);
                 break;
 
@@ -36,7 +38,7 @@ public class Enemy : Character
                 MaxHealth = 45;
                 Strength = 30;
                 Defense = 25;
-                ExperienceReward = 30;
+                ExperienceReward = 300;
                 break;
 
             case EnemyType.General:
@@ -44,7 +46,7 @@ public class Enemy : Character
                 MaxHealth = 100;
                 Strength = 80;
                 Defense = 70;
-                ExperienceReward = 100;
+                ExperienceReward = 1000;
                 break;
 
             case EnemyType.King:
@@ -52,7 +54,7 @@ public class Enemy : Character
                 MaxHealth = 300;
                 Strength = 200;
                 Defense = 150;
-                ExperienceReward = 1000;
+                ExperienceReward = 10000;
                 break;
         }
     }

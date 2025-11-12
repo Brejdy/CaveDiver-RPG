@@ -175,7 +175,7 @@ public class GameEngine
             }
 
             var item = enemy.LootItem;
-            GameUtils.TypeLine($"You found {item.Name} on {enemy.Name}!");
+            GameUtils.TypeLine($"You found {item.Name} STR: {item.StrengthBonus}, DEF: {item.DefenseBonus}, INT: {item.IntelligenceBonus} on {enemy.Name}!");
 
             while (true)
             {
@@ -252,7 +252,7 @@ public class GameEngine
         }
     }
 
-    private int AskForNumber(string question, int min, int max)
+    public static int AskForNumber(string question, int min, int max)
     {
         int choice = -1;
         while (choice < min || choice > max)

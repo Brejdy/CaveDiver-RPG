@@ -5,7 +5,7 @@ namespace CaveDiver.Dialogue;
 
 public class GameUtils
 {
-    public static void TypeLine(string text, int delay = 25)
+    public static void TypeLine(string text, int delay = 0) //delay 25
     {
         foreach (var c in text)
         {
@@ -19,7 +19,7 @@ public class GameUtils
         Console.WriteLine();
     }
 
-    public static void Type(string text, int delay = 25)
+    public static void Type(string text, int delay = 0) //delay 25
     {
         foreach (var c in text)
         {

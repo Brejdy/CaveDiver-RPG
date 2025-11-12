@@ -1,4 +1,4 @@
-﻿namespace CaveDiver.Models;
+﻿namespace CaveDiver.Models.Types;
 
 public class EnemyType
 {

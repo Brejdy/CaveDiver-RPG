@@ -88,4 +88,10 @@ public abstract class Character
 
         GameUtils.TypeLine($"{Name} unequipped {item.Name}.");
     }
+
+    public void SwapItem(Item newItem, Item oldItem)
+    {
+        RemoveItem(oldItem);
+        AddItem(newItem);
+    }
 }

@@ -1,22 +1,31 @@
 ﻿using CaveDiver.Engine;
+using CaveDiver.Dialogue;
 using CaveDiver.Models;
+using CaveDiver.Models.Types;
+using System.Reflection.Metadata.Ecma335;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-var player = new Player("Grodian", 30, 15, 10, 5);
+GameUtils.TypeLine("Choose your name HERO:");
+var name = Console.ReadLine();
 
-var companions = new List<Companion>
-{
-    new Companion("Lina", CompanionRoles.Healer),
-    new Companion("Borin", CompanionRoles.Warrior),
-    new Companion("Elara", CompanionRoles.Mage)
-};
+var player = new Player(name, 20, 8, 6, 6);
+player.Gold = 5;
 
-var enemies = new List<Enemy>
-{ 
-    new Enemy("Goblin 1", EnemyType.Goblin),
-    new Enemy("Goblin Shaman 3", EnemyType.GoblinShaman),
-};
+GameUtils.TypeLine($"Welcome {player.Name} to the world that needs saving.");
+GameUtils.TypeLine($"Your stats are:");
+GameUtils.TypeLine($"   - Max HP: {player.MaxHealth}");
+GameUtils.TypeLine($"   - Strength: {player.Strength}");
+GameUtils.TypeLine($"   - Defense: {player.Defense}");
+GameUtils.TypeLine($"   - Intelligence: {player.Intelligence}");
 
-var game = new GameEngine();
-game.StartBattle(player, companions, enemies);
+GameUtils.TypeLine("To save the world explore all caves and kill Goblin kings");
+GameUtils.TypeLine("Durning your journey you will meet companions - do not reject them, they will be a great help!");
+
+var party = new List<Companion>();
+
+var world = new World();
+
+var engine = new GameEngine();
+
+world.StartAdventure(player, party, engine);
