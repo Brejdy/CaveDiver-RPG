@@ -48,7 +48,8 @@ public class World
                 new Item("Cloak of Medhiv", "Armor", def: 4, intl: 15, price: 45),
                 new Item("Magic staff", "Weapon", str: 10, intl: 15, price: 70)
             }
-        }; 
+        };
+        willowdale.Companion = new Companion("Ardia", CompanionRoles.Mage, "A young mage, a girl in her late teens with long red hair and shifty green eyes");
 
         emeraldGrove.ConnectedLocations.Add(willowdale);
         emeraldGrove.ConnectedLocations.Add(whisperingWoods);
@@ -62,7 +63,7 @@ public class World
                 Defense = 3
             }
         };
-        emeraldGrove.Companion = new Companion("Lyria", CompanionRoles.Warrior);
+        emeraldGrove.Companion = new Companion("Lyria", CompanionRoles.Warrior, "Muscle bound woman with battle scars telling a warriors story");
         
         whisperingWoods.ConnectedLocations.Add(emeraldGrove);
         whisperingWoods.ConnectedLocations.Add(twilightCave);
@@ -144,7 +145,7 @@ public class World
 
     public void StartAdventure(Player player, List<Companion> party, GameEngine engine)
     {
-        GameUtils.TypeLine("You Journey begins...");
+        GameUtils.TypeLine("Your Journey begins...");
         StartingLocation.Enter(player, party, engine);
     }
 }

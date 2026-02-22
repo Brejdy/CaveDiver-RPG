@@ -1,6 +1,7 @@
 ﻿using CaveDiver.Dialogue;
 using CaveDiver.Models.Types;
 using CaveDiver.Engine;
+using CaveDiver.Interfaces;
 
 namespace CaveDiver.Models;
 
@@ -41,7 +42,7 @@ public class Location
                 if (Dice.Roll(10) > 5)
                     ambushEnemies.Add(new Enemy("Goblin Shaman", EnemyType.GoblinShaman));
                 if (Dice.Roll(10) > 8)
-                    ambushEnemies.Add(new Enemy("Bandit", EnemyType.General));
+                    ambushEnemies.Add(new Enemy("Bandit", EnemyType.Goblin));
             }
             else if (Type == LocationType.Cave)
             {
@@ -52,11 +53,15 @@ public class Location
                     ambushEnemies.Add(new Enemy("Goblin King", EnemyType.King));
             }
 
-            engine.StartBattle(player, party, ambushEnemies);
+            var survived = engine.StartBattle(player, party, ambushEnemies);
+            if (!survived)
+            {
+                return;
+            }
         }
         else
         {
-            RandomEncounter.Trigger(player, party);
+            RandomEncounter.Trigger(player, party, this);
         }
     }
 
@@ -70,46 +75,61 @@ public class Location
         while (exploring)
         {
             GameUtils.TypeLine("\nWhat would you like to do?");
-            GameUtils.TypeLine("1. Look around");
+            GameUtils.TypeLine("1. Look around (or type: look)");
             if (Merchant != null)
             { 
-                GameUtils.TypeLine("2. Trade with merchant"); 
+                GameUtils.TypeLine("2. Trade with merchant (or type: trade)"); 
             }
             if (Enemies.Any())
             {
-                GameUtils.TypeLine("3. Engage in battle");
+                GameUtils.TypeLine("3. Engage in battle (or type: battle/attack)");
             }
             if (ConnectedLocations.Any())
             {
-                GameUtils.TypeLine("4. Travel to another location");
+                GameUtils.TypeLine("4. Travel to another location (or type: travel/go to ... )");
             }
-            GameUtils.TypeLine("5. Rest");
-            GameUtils.TypeLine("6. Leave game");
+            GameUtils.TypeLine("5. Rest (or type: rest)");
+            GameUtils.TypeLine("6. Leave game (or type: exit)");
+            
+            if (party.Count > 0)
+            {
+                GameUtils.TypeLine("7. Talk to companion (or type talk");
+            }
 
             string? input = Console.ReadLine();
+            var action = CommandParser.ParseExplorationAction(input, Merchant != null, Enemies.Any(), ConnectedLocations.Any());
 
-            switch (input)
+            switch (action)
             {
-                case "1":
-                    GameUtils.TypeLine($"You look around. {Description}");
+                case CommandParser.ExplorationAction.LookAround:
+                    
+                    GameUtils.TypeLine($"You look around. {Description}"); 
+
+                    if (Companion != null)
+                    {
+                        TryMeetCompanion(player, party);
+                    }
+                    
                     break;
 
-                case "2":
+                case CommandParser.ExplorationAction.Trade:
                     Merchant?.Trade(player, party);
                     break;
 
-                case "3":
+                case CommandParser.ExplorationAction.Battle:
                     if (Enemies.Any())
                     {
                         GameUtils.TypeLine("There are enemies nearby, they have spotted you!");
                         TryEncounter(player, party, engine, "entering the area");
-                        engine.StartBattle(player, party, Enemies);
-                        Enemies.Clear();
+                        var survived = engine.StartBattle(player, party, Enemies);
 
-                        if (!player.IsAlive)
+                        if (!survived)
                         {
-                            exploring = false;
+                            return;
                         }
+
+                        Enemies.Clear();
+                        IsCleared = true;
 
                         TryMeetCompanion(player, party);
                     }
@@ -120,7 +140,7 @@ public class Location
                     }
                     break;
 
-                case "4":
+                case CommandParser.ExplorationAction.Travel:
                     if (!ConnectedLocations.Any())
                     {
                         GameUtils.TypeLine("There is nowhere to travel.");
@@ -129,14 +149,20 @@ public class Location
 
                     GameUtils.TypeLine("Where would you like to travel?");
                     for (int i = 0; i < ConnectedLocations.Count; i++)
-                    { 
+                    {
                         GameUtils.TypeLine($"{i + 1}. {ConnectedLocations[i].Name}"); 
                     }
-                    GameUtils.TypeLine($"{ConnectedLocations.Count + 1}. Stay here");
+                    GameUtils.TypeLine($"{ConnectedLocations.Count + 1}. Stay here (or type: stay)");
 
-                    if (int.TryParse(Console.ReadLine(), out int travelChoice) &&
-                        travelChoice >= 1 && travelChoice <= ConnectedLocations.Count)
+                    var travelInput = Console.ReadLine();
+                    if (CommandParser.TryResolveTravelDestination(travelInput, ConnectedLocations, out int travelIndex, out bool stayHere))
                     {
+                        if (stayHere)
+                        {
+                            GameUtils.TypeLine("You decide to stay.");
+                            break;
+                        }
+
                         TryEncounter(player, party, engine, "leaving the area");
 
                         if(!player.IsAlive)
@@ -145,7 +171,7 @@ public class Location
                         }
 
                         exploring = false;
-                        var next = ConnectedLocations[travelChoice - 1];
+                        var next = ConnectedLocations[travelIndex];
 
 
                         TryEncounter(player, party, engine, $"traveling to {next.Name}");
@@ -161,8 +187,10 @@ public class Location
                     }
                     break;
 
-                case "5":
-                    GameUtils.TypeLine($"{player.Name} and the party take a rest. HP restored!");
+                case CommandParser.ExplorationAction.Rest:
+                    GameUtils.TypeLine($"{player.Name} and the party set up camp.");
+                    GameUtils.TypeLine($"After building a fire, eating hearty meal and sharing stories you all feel rested.");
+                    GameUtils.TypeLine($"HP has been restored.");
                     player.Health = player.MaxHealth;
                     foreach (var companion in party)
                     { 
@@ -170,13 +198,17 @@ public class Location
                     }
                     break;
 
-                case "6":
+                case CommandParser.ExplorationAction.Exit:
                     GameUtils.TypeLine("You decide to end your journey.");
                     exploring = false;
                     break;
 
+                case CommandParser.ExplorationAction.Talk:
+                    StartConversation(player, party);
+                    break;
+
                 default:
-                    GameUtils.TypeLine("Invalid choice.");
+                    GameUtils.TypeLine("Invalid action. Try text commands like 'look', 'trade', 'battle', 'travel', 'rest', 'exit'.");
                     break;
             }
         }
@@ -184,43 +216,97 @@ public class Location
 
     public void TryMeetCompanion(Player player, List<Companion> party)
     {
-        if (Companion != null && IsCleared)
+        if (Companion == null)
+            return;
+
+        if (HasEnemies)
         {
-            GameUtils.TypeLine($"Wait... hero, you saved me.");
-            GameUtils.TypeLine($"My name is {Companion.Name}, I am local {Companion.Role}.");
-            GameUtils.TypeLine($"I could be of great help, will you allow me to join your party? \n yes / no");
-
-            var choice = Console.ReadLine().ToLower();
-            if (choice == "yes")
-            {
-                GameUtils.TypeLine($"Thank you, {player.Name}");
-                GameUtils.TypeLine($"I promise i will not fail you!");
-
-                party.Add(Companion);
-            }
-            else
-            {               
-                GameUtils.TypeLine($"You have rejected {Companion.Name} and you both walked different ways");
-            }
+            GameUtils.TypeLine($"\nThrough the chaos of battle, you notice a {Companion.Description}, a {Companion.Role} trapped nearby!");
+            GameUtils.TypeLine($"Defeat the enemies to save the {Companion.Role}.");
+            return;
         }
-        else if (Companion != null && Enemies == null)
+
+        if (IsCleared)
         {
-            GameUtils.TypeLine($"I've heard of your bravery, {player.Name}. Allow me to aid you on your journey!");
-            GameUtils.TypeLine($"My name is {Companion.Name}, I am local {Companion.Role}.");
-            GameUtils.TypeLine($"I could be of great help, will you allow me to join your party? \n yes / no");
+            GameUtils.TypeLine("\nYou notice someone approaching you...");
+            GameUtils.TypeLine(Companion.Description);
+            GameUtils.TypeLine("\nWait... hero, you saved me.");
+        }
+        else
+        {
+            GameUtils.TypeLine("\nA figure approaches you calmly...");
+            GameUtils.TypeLine(Companion.Description);
+        }
 
-            var choice = Console.ReadLine().ToLower();
-            if (choice == "yes")
-            {
-                GameUtils.TypeLine($"Thank you, {player.Name}");
-                GameUtils.TypeLine($"I promise i will not fail you!");
+        GameUtils.TypeLine($"\nMy name is {Companion.Name}, I am a {Companion.Role}.");
+        GameUtils.TypeLine("Will you allow me to join your party? (yes / no)");
 
-                party.Add(Companion);
-            }
-            else
+        var choice = Console.ReadLine()?.ToLower();
+
+        if (choice == "yes")
+        {
+            GameUtils.TypeLine($"Thank you, {player.Name}.");
+            GameUtils.TypeLine("I promise I will not fail you!");
+
+            party.Add(Companion);
+            Companion = null;
+        }
+        else
+        {
+            GameUtils.TypeLine($"You and {Companion.Name} walk different paths.");
+            Companion = null;
+        }
+    }
+
+    private async Task StartConversation(Player player, List<Companion> party)
+    {
+        if (!party.Any())
+        {
+            GameUtils.TypeLine("You have no companions to talk to.");
+            return;
+        }
+
+        GameUtils.TypeLine("Who do you want to talk to?");
+        for (int i = 0; i < party.Count; i++)
+        {
+            GameUtils.TypeLine($"{i + 1}. {party[i].Name}");
+        }
+
+        int choice = GameEngine.AskForNumber("Enter number: ", 1, party.Count);
+        var companion = party[choice - 1];
+
+        IDialogueProvider provider = new DialogueProvider();
+
+        GameUtils.TypeLine($"\nYou start talking with {companion.Name}.");
+        GameUtils.TypeLine("Type 'bye' to end conversation.\n");
+
+        while (true)
+        {
+            GameUtils.Type("You: ");
+            var input = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(input))
+                continue;
+
+            if (input.ToLower() == "bye")
             {
-                GameUtils.TypeLine($"You have rejected {Companion.Name} and you both walked different ways");
+                GameUtils.TypeLine($"{companion.Name}: Until next time.");
+                break;
             }
+
+            var context = new DialogueContext
+            {
+                Player = player,
+                Companion = companion,
+                PlayerInput = input
+            };
+
+            var response = await provider.GetResponseAsync(context);
+
+            companion.Remember(input, response);
+
+            GameUtils.TypeLine($"{companion.Name}: {response}");
+            GameUtils.TypeLine();
         }
     }
 }

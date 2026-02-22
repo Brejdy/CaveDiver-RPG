@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CaveDiver")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+38cb6e773d36f2038d054157dfb03637be4fa57a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bb31595c1fe5830ee90552d2729cf29313ee9eed")]
 [assembly: System.Reflection.AssemblyProductAttribute("CaveDiver")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CaveDiver")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

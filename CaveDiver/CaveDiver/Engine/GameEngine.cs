@@ -8,7 +8,7 @@ namespace CaveDiver.Engine;
 
 public class GameEngine
 {
-    public void StartBattle(Player player, List<Companion> companions, List<Enemy> enemies)
+    public bool StartBattle(Player player, List<Companion> companions, List<Enemy> enemies)
     {
         var enemyTypes = string.Join(", ", enemies.Select(e => e.Type).Distinct());
         if (enemies.Count() > 1)
@@ -23,10 +23,22 @@ public class GameEngine
 
         while (player.IsAlive && enemies.Any(e => e.IsAlive))
         {
-            GameUtils.Type("Your action (attack enemy no. / run ):");
-            string? input = Console.ReadLine()?.ToLower();
+            var enemiesForPrompt = enemies
+                .Select((enemy, index) => new { Enemy = enemy, Index = index })
+                .Where(x => x.Enemy.IsAlive)
+                .ToList();
 
-            if (input == "run")
+            GameUtils.TypeLine("Enemies:");
+            foreach (var enemy in enemiesForPrompt)
+            {
+                GameUtils.TypeLine($"{enemy.Index + 1}. {enemy.Enemy.Name} ({enemy.Enemy.Health}/{enemy.Enemy.MaxHealth} HP)");
+            }
+
+            GameUtils.Type("Your action (attack + enemy name or number, run): ");
+            string? input = Console.ReadLine();
+            var command = CommandParser.ParseBattleCommand(input, enemies);
+
+            if (command.Action == CommandParser.BattleAction.Run)
             {
                 var roll = Dice.Roll(20);
                 GameUtils.TypeLine($"Rolling for your escape comes up to: {roll}");
@@ -41,24 +53,30 @@ public class GameEngine
                     GameUtils.TypeLine("The enemy does not let you run away");
                 }
             }
-
-
-            if (input.StartsWith("attack"))
+            else if (command.Action == CommandParser.BattleAction.Attack)
             {
-                var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                int targetIndex = (parts.Length > 1 && int.TryParse(parts[1], out int index)) ? index - 1 : 0;
-                targetIndex = Math.Clamp(targetIndex, 0, enemies.Count - 1);
-
-                var target = enemies[targetIndex];
-                if (!target.IsAlive)
+                var targetIndex = command.TargetIndex;
+                if (!targetIndex.HasValue)
                 {
-                    GameUtils.TypeLine($"{target.Name} {targetIndex} has already been slain");
+                    GameUtils.TypeLine("No valid target found.");
                 }
                 else
                 {
-                    int dmg = player.Attack();
-                    target.TakeDamage(dmg);
+                    var target = enemies[targetIndex.Value];
+                    if (!target.IsAlive)
+                    {
+                        GameUtils.TypeLine($"{target.Name} has already been slain.");
+                    }
+                    else
+                    {
+                        int dmg = player.Attack();
+                        target.TakeDamage(dmg);
+                    }
                 }
+            }
+            else
+            {
+                GameUtils.TypeLine("Unknown action. Try e.g. 'attack goblin', 'attack 1' or 'run'.");
             }
             GameUtils.TypeLine();
             Thread.Sleep(1000);
@@ -128,16 +146,21 @@ public class GameEngine
         {
             GameUtils.TypeLine($"{player.Name} has died in battle \n");
             GameUtils.TypeLine("GAME OVER");
+            return false;
         }
         else if (enemies.All(e => !e.IsAlive))
         {
             GameUtils.TypeLine($"All enemies have been slain");
 
             BattleIsWon(player, companions, enemies);
+
+            return true;
         }
         else
         {
             GameUtils.TypeLine("Battle is over");
+
+            return true;
         }
     }
 

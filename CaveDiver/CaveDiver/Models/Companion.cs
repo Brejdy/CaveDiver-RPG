@@ -7,8 +7,16 @@ namespace CaveDiver.Models;
 public class Companion : Character
 {
     public string Role {  get; set; }
+    public string Description { get; set; }
 
-    public Companion(string name, string role) : base (name, 0, 0, 0, 0, 0)
+    public string Personality { get; set; } = "";
+    public string Background { get; set; } = "";
+    public string SpeechStyle { get; set; } = "";
+    public int Loyalty { get; set; } = 50; 
+    public int Trust { get; set; } = 50;
+    public List<string> Memory { get; set; } = new();
+    
+    public Companion(string name, string role, string description) : base (name, 0, 0, 0, 0, 0)
     {
         Name = name;
         Role = role;
@@ -42,6 +50,7 @@ public class Companion : Character
             default:
                 throw new ArgumentException($"Unknown role {role}");
         }
+        Description = description;
     }
 
     public void Support(Character target)
@@ -176,5 +185,63 @@ public class Companion : Character
             GameUtils.TypeLine($"{Name} has leveled up to Level {Level}");
             GameUtils.TypeLine($"New stats are:\n Max Health: {MaxHealth} \n Strength: {Strength} \n Defense: {Defense} \n Inteligence: {Intelligence}");
         }
+    }
+
+    private void SetPersonality()
+    {
+        switch (Role)
+        {
+            case CompanionRoles.Mage:
+                Personality = "Intelligent, curious, slightly mysterious";
+                SpeechStyle = "Speaks in thoughtful, calm sentences";
+                Background = "Studied forbidden arcane arts before leaving the academy.";
+                break;
+
+            case CompanionRoles.Healer:
+                Personality = "Compassionate, empathetic, morally driven";
+                SpeechStyle = "Soft, warm and supportive tone";
+                Background = "Wandered the lands healing the wounded of forgotten wars.";
+                break;
+
+            case CompanionRoles.Warrior:
+                Personality = "Brave, direct, battle-hardened";
+                SpeechStyle = "Short, firm sentences. Confident tone.";
+                Background = "Fought in many battles and survived against impossible odds.";
+                break;
+        }
+    }
+
+    public void Remember(string playerInput, string response)
+    {
+        Memory.Add($"Player: {playerInput}");
+        Memory.Add($"Me: {response}");
+
+        if (Memory.Count > 20)
+            Memory.RemoveAt(0);
+    }
+
+    public string BuildAIPrompt(Player player, string playerInput)
+    {
+        var memoryBlock = Memory.Count > 0
+            ? string.Join("\n- ", Memory.TakeLast(5))
+            : "No recent memories.";
+        return $"""
+            You are {Name}, a {Role}.
+
+            Personality: {Personality}
+            Background: {Background}
+            Speech Style: {SpeechStyle}
+
+            Loyalty to player: {Loyalty}/100
+            Trust Level {Trust}/100
+
+            Recent memories: 
+            - {memoryBlock}
+
+            Player ({player.Name}) says:
+            "{playerInput}"
+
+            Respond in character in short fantasy tone.
+            """;
     }
 }

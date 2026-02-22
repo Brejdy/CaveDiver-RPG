@@ -1,15 +1,16 @@
 ﻿using CaveDiver.Engine;
 using CaveDiver.Dialogue;
 using CaveDiver.Models;
-using CaveDiver.Models.Types;
-using System.Reflection.Metadata.Ecma335;
+
+//TODOS:
+//          - Add ollama for conversation
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 GameUtils.TypeLine("Choose your name HERO:");
 var name = Console.ReadLine();
 
-var player = new Player(name, 20, 8, 6, 6);
+var player = new Player(name, 100, 100, 100, 100); //20, 8, 6, 6
 player.Gold = 5;
 
 GameUtils.TypeLine($"Welcome {player.Name} to the world that needs saving.");
