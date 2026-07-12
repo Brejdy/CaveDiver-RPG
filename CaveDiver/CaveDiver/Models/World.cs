@@ -143,9 +143,9 @@ public class World
         StartingLocation = oakstead;
     }
 
-    public void StartAdventure(Player player, List<Companion> party, GameEngine engine)
+    public async Task StartAdventure(Player player, List<Companion> party, GameEngine engine)
     {
         GameUtils.TypeLine("Your Journey begins...");
-        StartingLocation.Enter(player, party, engine);
+        await StartingLocation.Enter(player, party, engine);
     }
 }

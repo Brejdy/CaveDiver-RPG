@@ -51,6 +51,7 @@ public class Companion : Character
                 throw new ArgumentException($"Unknown role {role}");
         }
         Description = description;
+        SetPersonality();
     }
 
     public void Support(Character target)
@@ -241,7 +242,7 @@ public class Companion : Character
             Player ({player.Name}) says:
             "{playerInput}"
 
-            Respond in character in short fantasy tone.
+            Respond in character in short fantasy tone. Do not write narration. Do not explain your reasoning.
             """;
     }
 }

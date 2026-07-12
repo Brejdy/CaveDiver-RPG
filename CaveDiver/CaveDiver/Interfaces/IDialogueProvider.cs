@@ -10,5 +10,6 @@ namespace CaveDiver.Interfaces
     public interface IDialogueProvider
     {
         Task<string> GetResponseAsync(DialogueContext context);
+        IAsyncEnumerable<string> StreamResponseAsync(DialogueContext context);
     }
 }

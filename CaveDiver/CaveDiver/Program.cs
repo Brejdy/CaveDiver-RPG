@@ -29,4 +29,4 @@ var world = new World();
 
 var engine = new GameEngine();
 
-world.StartAdventure(player, party, engine);
+await world.StartAdventure(player, party, engine);

@@ -2,6 +2,7 @@
 using CaveDiver.Models.Types;
 using CaveDiver.Engine;
 using CaveDiver.Interfaces;
+using System.Text;
 
 namespace CaveDiver.Models;
 
@@ -65,7 +66,7 @@ public class Location
         }
     }
 
-    public void Enter(Player player, List<Companion> party, GameEngine engine)
+    public async Task Enter(Player player, List<Companion> party, GameEngine engine)
     {
         GameUtils.TypeLine($"You arrived at {Name}.");
         GameUtils.TypeLine(Description);
@@ -179,7 +180,7 @@ public class Location
                         {
                             exploring = false;
                         }
-                        next.Enter(player, party, engine);
+                        await next.Enter(player, party, engine);
                     }
                     else
                     { 
@@ -204,7 +205,7 @@ public class Location
                     break;
 
                 case CommandParser.ExplorationAction.Talk:
-                    StartConversation(player, party);
+                    await StartConversation(player, party);
                     break;
 
                 default:
@@ -284,6 +285,7 @@ public class Location
         {
             GameUtils.Type("You: ");
             var input = Console.ReadLine();
+            GameUtils.Type("\n");
 
             if (string.IsNullOrWhiteSpace(input))
                 continue;
@@ -301,11 +303,23 @@ public class Location
                 PlayerInput = input
             };
 
-            var response = await provider.GetResponseAsync(context);
+            var response = new StringBuilder();
 
-            companion.Remember(input, response);
+            GameUtils.Type($"{companion.Name}: ");
+            await foreach (var chunk in provider.StreamResponseAsync(context))
+            {
+                response.Append(chunk);
+                GameUtils.Type(chunk);
+            }
 
-            GameUtils.TypeLine($"{companion.Name}: {response}");
+            if (response.Length == 0)
+            {
+                response.Append("I remain silent.");
+                GameUtils.Type(response.ToString());
+            }
+            GameUtils.TypeLine();
+
+            companion.Remember(input, response.ToString());
             GameUtils.TypeLine();
         }
     }
